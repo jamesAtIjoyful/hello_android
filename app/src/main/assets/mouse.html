@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: #ffff0000;
+        }
+
+        #canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+<script>
+        class Particle {
+            constructor(opts) {
+                this.x = 0 //原始x点坐标为0
+                this.y = 0 //原始y点坐标为0
+                this.r = 0
+                this.vx = 0
+                this.vy = 0
+                this.fillStyle = '#000' //默认黑色
+                this.strokeStyle = 'rgba(0, 0, 0, 0)' //描述画笔（绘制图形）颜色或者样式的属性默认为无色
+                this.theta = randomNum([0, Math.PI])
+
+                Object.assign(this, opts) //将所有可枚举属性的值从一个或多个源对象复制到目标对象
+                return this
+            }
+            render(ctx) {
+                let {
+                    x,
+                    y,
+                    r,
+                    vx,
+                    vy,
+                    fillStyle,
+                    strokeStyle
+                } = this
+
+                ctx.save() /*保存默认状态*/
+                ctx.translate(x, y) //将 canvas 按原始 x点的水平方向、原始的 y点垂直方向进行平移变换
+                ctx.fillStyle = fillStyle //使用内部方式描述颜色和样式
+                ctx.beginPath() //通过清空子路径列表开始一个新路径的方法。 当你想创建一个新的路径时，调用此方法。
+                ctx.arc(0, 0, r, 0, 2 * Math.PI) //ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+                    //绘制圆弧路径的方法。 圆弧路径的圆心在 (x, y) 位置，半径为 r ，根据anticlockwise （默认为顺时针）指定的方向从 startAngle 开始绘制，到 endAngle 结束。
+                ctx.fill() //根据当前的填充样式，填充当前或已存在的路径的方法。采取非零环绕或者奇偶环绕规则。
+                ctx.restore() // 还原到上次保存的默认状态
+
+                return this
+            }
+        }
+
+        function randomNum(arr, int) {
+            const max = Math.max(...arr) //函数返回一组数中的最大值。
+            const min = Math.min(...arr) //函数返回一组数中的最小值。
+            const num = Math.random() * (max - min) + min //获取任意随机数
+
+            return int ? Math.round(num) : num //四舍五入取整
+        }
+        let colors = ['pink', 'blue', 'lightpink', 'lightblue', 'lightskyblue', '#FF33FF', '#FF99FF']; //粒子的颜色，可选自己喜欢的颜色
+        function randomColor(colors) {
+            return colors[randomNum([0, colors.length - 1], true)] //颜色数组的数目
+        }
+
+
+
+
+        const canvas = document.querySelector('#canvas')
+        const ctx = canvas.getContext('2d')
+
+        let W = canvas.width = window.innerWidth //返回以像素为单位的窗口的内部宽度
+        let H = canvas.height = window.innerHeight //返回以像素为单位的窗口的内部高度
+
+        let mouse = {
+                x: W / 2,
+                y: H / 2
+            } //mouse的x值是宽度/2；y的值是高度/2
+
+
+
+
+        canvas.addEventListener('mousemove', function(e) {
+                mouse.x = e.clientX //提供事件发生时的应用客户端区域的水平坐标 (与页面坐标不同)
+                mouse.y = e.clientY //提供事件发生时的应用客户端区域的垂直坐标 (与页面坐标不同)
+            }) //鼠标事件，鼠标移动的时候提供给mouse水平座标和垂直坐标
+
+        canvas.addEventListener('mouseout', function() {
+                mouse = {
+                    x: W / 2,
+                    y: H / 2
+                }
+            }) //鼠标离开的时候提供给mouse的x值是宽度/2；y的值是高度/2
+
+        let particles = [],
+            particleNum = 0
+        let force, theta
+
+        function createParticle() {
+            for (let i = 0; i < particleNum; i++) {
+                particles.push(new Particle({
+                    x: mouse.x,
+                    y: mouse.y,
+                    r: randomNum([5, 40]),
+                    vx: Math.sin(theta) * force, //theta 的正玄值。返回值在 -1.0 到 1.0 之间；
+                    vy: Math.cos(theta) * force, //theta 的余弦值。返回的是 -1.0 到 1.0 之间的数；
+                    fillStyle: randomColor(colors), //颜色更改为colors数组里的颜色
+                    wander: randomNum([0.5, 2]), //返回值0.5-2
+                    drag: randomNum([0.9, 0.99])
+                }))
+            }
+        } //我们用 particles 数组来存放所有的粒子，这里的 particleNum 的作用是遍历的步长，如果我们一个像素一个像素地扫，那么最后拼凑文本的粒子将会非常密集，增大这个值，最后产生的粒子就会更稀疏。
+
+        function move(p, i) {
+            p.x += p.vx
+            p.y += p.vy
+            p.vx *= p.drag
+            p.vy *= p.drag
+            p.theta += randomNum([-0.5, 0.5]) * p.wander
+            p.vx += Math.sin(p.theta) * 0.1
+            p.vy += Math.cos(p.theta) * 0.1
+            p.r *= 0.96
+            if (p.r <= 0.5) {
+                particles.splice(i, 1)
+            }
+        } //设置粒子坐标、数目、大小，位置，移动方向
+        function draw(p, i) {
+            p.render(ctx)
+        };
+        (function updating() {
+            window.requestAnimationFrame(updating)
+            ctx.clearRect(0, 0, W, H) //通过把像素设置为透明以达到擦除一个矩形区域的目的。
+            ctx.globalCompositeOperation = 'lighter' //设置要在绘制新形状时应用的合成操作的类型，lighter:两个重叠图形的颜色是通过颜色值相加来确定的
+
+            particleNum = randomNum([1, 4])
+            force = randomNum([2, 8])
+            theta = randomNum([0, 2 * Math.PI])
+            createParticle()
+
+            particles.forEach(move)
+            particles.forEach(draw)
+        })()
+    </script>
+</body>
+
+</html>
