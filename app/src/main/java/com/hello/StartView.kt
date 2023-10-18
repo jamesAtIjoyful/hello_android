@@ -17,6 +17,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Random
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 
 class TouchImageView : AppCompatImageView {
@@ -53,25 +55,41 @@ class TouchImageView : AppCompatImageView {
     }
 
     private val points = arrayListOf<PointF>()
-
+    private val prevStar = PointF()
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
                 path.moveTo(event.x, event.y)
                 prev.set(event.x, event.y)
+                prevStar.set(event.x, event.y)
                 line.moveTo(event.x, event.y)
             }
 
             MotionEvent.ACTION_MOVE -> {
                 path.quadTo(prev.x, prev.y, (event.x + prev.x) / 2f, (event.y + prev.y) / 2f)
-                prev.set(event.x, event.y)
                 line.lineTo(event.x, event.y)
-                points.add(PointF(event.x, event.y))
+                val distance = sqrt((event.x - prevStar.x).toDouble().pow(2) + ((event.y - prevStar.y).toDouble().pow(2)))
+                if (distance > 20) {
+                    prevStar.length()
+                    points.add(PointF(event.x, event.y))
+                    if (points.size > 20) {
+                        points.removeFirstOrNull()
+                    }
+                    prevStar.set(event.x, event.y)
+                    print("BIG")
+                }
+                println(" distance = $distance")
+
+                prev.set(event.x, event.y)
+//                points.add(PointF(event.x, event.y))
+//                if(points.size > 10){
+//                    points.removeFirst()
+//                }
             }
 
             else -> {
-//                path.reset()
-//                line.reset()
+                path.reset()
+                line.reset()
 //                points.clear()
 //                invalidate()
             }
@@ -99,45 +117,25 @@ class TouchImageView : AppCompatImageView {
     private val translateXLevel = floatArrayOf(
         -25f,
         0f,
-        25f,
+        25f
+    )
 
-        )
-
-    private val prevPoint = PointF()
-    private var count = 0
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawPath(path, paint)
         if (drawLineTo)
-            canvas?.drawPath(line, linePaint)
-        count = 0
-        points.forEachIndexed { index, _ ->
-            val p = points[points.size - 1 - index]
-            if (index == 0) prevPoint.set(p)
-            val canDraw = if (index == 0 || index == points.size - 1) {
-                true
-            } else {
-                val distance = Math.sqrt(Math.pow((p.x - prevPoint.x).toDouble(), 2.0) + Math.pow((p.y - prevPoint.y).toDouble(), 2.0))
-                val b = (distance > 30.0)
-                if (b) {
-                    prevPoint.set(p)
-                }
-                b
-
-            }
-            count += if (canDraw) 1 else 0
-            if (canDraw) {
-                m.reset()
-                val scale = Math.max(1.5f - 0.1f * index, 0f)
+            canvas.drawPath(line, linePaint)
+        points.forEachIndexed { index, p ->
+            m.reset()
+            val scale = Math.min(0.05f * index, 1.1f)
 //                val scale = scaleLevels[r.nextInt(scaleLevels.size)]
-                m.postScale(scale, scale)
-                m.postTranslate(p.x + translateXLevel[r.nextInt(translateXLevel.size)], p.y)
-                m.postRotate(r.nextFloat())
-                canvas.drawBitmap(stars, m, paint)
-            }
+            println("scale = $scale")
+            m.postScale(scale, scale)
+            m.postTranslate(p.x + translateXLevel[r.nextInt(translateXLevel.size)], p.y)
+            m.postRotate(r.nextFloat())
+            canvas.drawBitmap(stars, m, paint)
         }
-        println("points.size = ${points.size}, $count")
-
+        points.removeFirstOrNull()
         points.takeIf { it.isNotEmpty() }?.removeFirst()
     }
 }
