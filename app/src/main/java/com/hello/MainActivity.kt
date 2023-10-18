@@ -19,12 +19,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        binding.button.setOnClickListener {
-            binding.textView.text = viewModel.sayHello()
-        }
 
-        binding.button2.setOnClickListener {
-            binding.textView.text = "button2 clicked"
-        }
     }
 }
