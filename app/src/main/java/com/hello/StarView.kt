@@ -21,7 +21,7 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 
-class TouchImageView : AppCompatImageView {
+class StarView : AppCompatImageView {
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         scope.launch(Dispatchers.Default) {
@@ -74,7 +74,7 @@ class TouchImageView : AppCompatImageView {
                 if (distance > 20) {
                     prevStar.length()
                     points.add(PointF(event.x, event.y))
-                    if (points.size > 40) {
+                    if (points.size > 20) {
                         points.removeFirstOrNull()
                     }
                     prevStar.set(event.x, event.y)
@@ -93,12 +93,22 @@ class TouchImageView : AppCompatImageView {
     }
 
     private val m = Matrix()
-    private val stars by lazy {
-        val opt = BitmapFactory.Options().apply {
-            inSampleSize = 20
-        }
-        BitmapFactory.decodeResource(resources, R.drawable.stars, opt)
+//    private val stars by lazy {
+//        val opt = BitmapFactory.Options().apply {
+//            inSampleSize = 20
+//        }
+//        BitmapFactory.decodeResource(resources, R.drawable.stars, opt)
+//    }
+
+    private val opt = BitmapFactory.Options().apply {
+            inSampleSize = 3
     }
+
+    private val stars = arrayListOf(
+        BitmapFactory.decodeResource(resources, R.drawable.star1, opt),
+        BitmapFactory.decodeResource(resources, R.drawable.star2, opt)
+    )
+
     private val r = Random()
     private val scaleLevels = floatArrayOf(
         0.5f,
@@ -128,9 +138,9 @@ class TouchImageView : AppCompatImageView {
             m.postScale(scale, scale)
             m.postTranslate(p.x + translateXLevel[r.nextInt(translateXLevel.size)], p.y)
             m.postRotate(r.nextFloat())
-            canvas.drawBitmap(stars, m, paint)
+            canvas.drawBitmap(stars[r.nextInt(2)], m, paint)
         }
-        repeat(2){
+        repeat(2) {
             points.removeFirstOrNull()
         }
 
