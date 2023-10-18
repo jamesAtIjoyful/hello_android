@@ -26,7 +26,7 @@ class TouchImageView : AppCompatImageView {
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         scope.launch(Dispatchers.Default) {
             while (true) {
-                delay(100)
+                delay(loopInterval)
                 invalidate()
             }
         }
@@ -34,6 +34,7 @@ class TouchImageView : AppCompatImageView {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
+    private var loopInterval = 100L
 
     var drawLineTo = true
     private val path = Path()
@@ -59,6 +60,7 @@ class TouchImageView : AppCompatImageView {
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
+                loopInterval = 100
                 path.moveTo(event.x, event.y)
                 prev.set(event.x, event.y)
                 prevStar.set(event.x, event.y)
@@ -72,26 +74,19 @@ class TouchImageView : AppCompatImageView {
                 if (distance > 20) {
                     prevStar.length()
                     points.add(PointF(event.x, event.y))
-                    if (points.size > 20) {
+                    if (points.size > 40) {
                         points.removeFirstOrNull()
                     }
                     prevStar.set(event.x, event.y)
-                    print("BIG")
-                }
-                println(" distance = $distance")
 
+                }
                 prev.set(event.x, event.y)
-//                points.add(PointF(event.x, event.y))
-//                if(points.size > 10){
-//                    points.removeFirst()
-//                }
             }
 
             else -> {
+                loopInterval = 50
                 path.reset()
                 line.reset()
-//                points.clear()
-//                invalidate()
             }
         }
         return true
@@ -115,9 +110,11 @@ class TouchImageView : AppCompatImageView {
     )
 
     private val translateXLevel = floatArrayOf(
+        -50f,
         -25f,
         0f,
-        25f
+        25f,
+        50f
     )
 
     override fun onDraw(canvas: Canvas) {
@@ -127,15 +124,16 @@ class TouchImageView : AppCompatImageView {
             canvas.drawPath(line, linePaint)
         points.forEachIndexed { index, p ->
             m.reset()
-            val scale = Math.min(0.05f * index, 1.1f)
-//                val scale = scaleLevels[r.nextInt(scaleLevels.size)]
-            println("scale = $scale")
+            val scale = Math.min(0.05f * index, 1.5f)
             m.postScale(scale, scale)
             m.postTranslate(p.x + translateXLevel[r.nextInt(translateXLevel.size)], p.y)
             m.postRotate(r.nextFloat())
             canvas.drawBitmap(stars, m, paint)
         }
-        points.removeFirstOrNull()
+        repeat(2){
+            points.removeFirstOrNull()
+        }
+
         points.takeIf { it.isNotEmpty() }?.removeFirst()
     }
 }
