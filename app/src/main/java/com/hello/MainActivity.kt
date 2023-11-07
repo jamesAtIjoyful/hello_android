@@ -12,19 +12,15 @@ class MainActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
-
-    @Inject
-    lateinit var viewModel: MainViewModel
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         binding.button.setOnClickListener {
-            binding.textView.text = viewModel.sayHello()
+
         }
 
         binding.button2.setOnClickListener {
-            binding.textView.text = "button2 clicked"
+            
         }
     }
 }
